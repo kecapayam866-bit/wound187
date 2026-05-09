@@ -1,13 +1,19 @@
 // bot.js
 const { Client, GatewayIntentBits, Partials, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, Collection } = require('discord.js');
-require('dotenv').config();
 
+// ----------------------
+// CONFIGURATION
+// ----------------------
+const TOKEN = 'MTUwMjQ5OTA5NjE3NzQxMDE4OQ.GrSGX-.9TLl2NpooAyJUSebukvd19lUZj_Rhcrjl4zZp0';          // <-- Place your bot token here
+const GUILD_ID = '1502497457332817962';       // <-- Your server ID
+const VOUCH_CHANNEL_ID = '1502497995122544731';  // <-- Channel where vouches should be posted
+
+// ----------------------
 const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
     partials: [Partials.Channel]
 });
 
-// Command collection
 client.commands = new Collection();
 
 // ----------------------
@@ -16,7 +22,7 @@ client.commands = new Collection();
 client.on('ready', async () => {
     console.log(`${client.user.tag} is online!`);
 
-    const guild = client.guilds.cache.get(process.env.GUILD_ID);
+    const guild = client.guilds.cache.get(GUILD_ID);
     if (!guild) return console.log("Guild not found");
 
     const channel = guild.channels.cache.find(c => c.name === 'ticket-panel');
@@ -35,7 +41,6 @@ client.on('ready', async () => {
                 .setStyle(ButtonStyle.Primary)
         );
 
-    // Send panel if it doesn't exist
     const messages = await channel.messages.fetch({ limit: 10 });
     const exists = messages.find(m => m.embeds[0]?.title === 'wound187 Support Panel');
     if (!exists) await channel.send({ embeds: [panelEmbed], components: [row] });
@@ -55,14 +60,8 @@ client.on('interactionCreate', async interaction => {
             name: `ticket-${interaction.user.id}`,
             type: 0, // GUILD_TEXT
             permissionOverwrites: [
-                {
-                    id: interaction.guild.id,
-                    deny: ['ViewChannel']
-                },
-                {
-                    id: interaction.user.id,
-                    allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory']
-                }
+                { id: interaction.guild.id, deny: ['ViewChannel'] },
+                { id: interaction.user.id, allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory'] }
             ]
         });
 
@@ -83,7 +82,6 @@ client.on('interactionCreate', async interaction => {
         interaction.reply({ content: `Your ticket has been created: ${ticketChannel}`, ephemeral: true });
     }
 
-    // Close ticket
     if (interaction.customId === 'close_ticket') {
         await interaction.channel.delete().catch(() => {});
     }
@@ -102,13 +100,14 @@ const vouchCommand = new SlashCommandBuilder()
 client.commands.set(vouchCommand.name, vouchCommand);
 
 client.on('ready', async () => {
-    const guild = client.guilds.cache.get(process.env.GUILD_ID);
+    const guild = client.guilds.cache.get(GUILD_ID);
     if (!guild) return;
     await guild.commands.create(vouchCommand);
 });
 
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
+
     if (interaction.commandName === 'vouch') {
         const user = interaction.options.getUser('user');
         const comment = interaction.options.getString('comment');
@@ -126,8 +125,11 @@ client.on('interactionCreate', async interaction => {
             .setColor('Gold')
             .setFooter({ text: `Vouch by ${interaction.user.tag}` });
 
-        await interaction.reply({ embeds: [embed] });
+        const vouchChannel = interaction.guild.channels.cache.get(VOUCH_CHANNEL_ID);
+        if (vouchChannel) vouchChannel.send({ embeds: [embed] });
+
+        interaction.reply({ content: 'Your vouch has been submitted!', ephemeral: true });
     }
 });
 
-client.login(process.env.TOKEN);
+client.login(TOKEN);
