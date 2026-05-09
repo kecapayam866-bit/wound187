@@ -1,0 +1,15 @@
+{
+  "name": "wound187-bot",
+  "version": "1.0.0",
+  "description": "Discord bot with ticket panel and vouch command",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "author": "YourName",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.15.3",
+    "dotenv": "^16.4.5"
+  }
+}
